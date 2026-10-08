@@ -2,7 +2,7 @@ name: ChatGPT snapshot transfer
 on:
   push:
     paths:
-      - 'snapshots/**'
+      - 'snapshots/bridge/latest.zip'
   workflow_dispatch:
 jobs:
   upload:
@@ -11,9 +11,30 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - name: Unpack verified snapshot for single-layer Artifact
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile
+          zpath=Path('snapshots/bridge/latest.zip')
+          stage=Path('artifact-staging')
+          with zipfile.ZipFile(zpath) as z:
+              assert z.testzip() is None
+              for info in z.infolist():
+                  rel=Path(info.filename)
+                  if rel.is_absolute() or '..' in rel.parts or not info.filename.startswith(('repo/','_bridge/')):
+                      raise RuntimeError('Unsafe ZIP member')
+                  if info.is_dir():
+                      continue
+                  out=stage/rel
+                  out.parent.mkdir(parents=True,exist_ok=True)
+                  out.write_bytes(z.read(info))
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: chatgpt-snapshot
-          path: snapshots/local-snapshot.zip
+          path: artifact-staging/
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
