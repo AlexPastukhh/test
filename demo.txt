@@ -1,3 +1,4 @@
-CHATGPT-TUNNEL-TRANSFER-TEST
-state=original
+﻿CHATGPT-TUNNEL-TRANSFER-TEST
+state=locally-modified-before-snapshot
 tracked=true
+chatgpt-roundtrip=APPLIED-R2-2026-10-08
